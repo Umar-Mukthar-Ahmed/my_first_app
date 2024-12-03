@@ -7,7 +7,7 @@ const commentSchema = new Schema({
     blog:{type:mongoose.SchemaTypes.ObjectId, ref:'blogs'},
     author:{type:mongoose.SchemaTypes.ObjectId, ref:'users'}
 },
-{timestamp:true}
+{timestamps:true}
 );
 
 module.exports = mongoose.model('Comment',commentSchema,'comments');
