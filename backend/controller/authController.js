@@ -1,6 +1,9 @@
 const Joi = require('joi');
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
+const userDTO = require('../dto/user');
+const RefreshToken = require('../models/token');
+const JWTService = require('../services/JWTService');
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@.#$!%*?&])[A-Za-z\d@.#$!%*?&]{8,32}$/;
 
 const authController = {
@@ -60,18 +63,42 @@ const authController = {
 
 
         //5.store user data into the datbase
-        const userToRegister = new User({
-            username,
-            email,
-            name,
-            password: hashedPassword
-        })
-        const user = await userToRegister.save();
+        let accessToken;
+        let refreshToken;
+        let user;
+        try {
+            const userToRegister = new User({
+                username,
+                email,
+                name,
+                password: hashedPassword
+            })
+            user = await userToRegister.save();
+            //token generation 
+            accessToken = JWTService.signAccessToken({ _id: user.id }, '30m');
+            refreshToken = JWTService.signRefreshToken({ _id: user.id }, '60m');
 
+        } catch (error) {
+            return next(error);
+        };
 
+        //store refreshToken in the database
+        await JWTService.storeRefreshToken(refreshToken, user._id);
+
+        //send to the client-side using cookies
+        res.cookie('accessToken', accessToken, {
+            maxAge: 1000 * 60 * 60 * 24,
+            httpOnly: true
+        });
+
+        res.cookie('refreshToken', refreshToken, {
+            maxAge: 1000 * 60 * 60 * 24,
+            httpOnly: true
+        });
 
         //6.update the response
-        return res.status(201).json(user);
+        const userDto = new userDTO(user);
+        return res.status(201).json({ user: userDto, auth: true });
     },
 
 
@@ -122,9 +149,33 @@ const authController = {
         }
 
         //4.return response
-        return res.status(200).json(user);
+        //create tokens
+        const accessToken = JWTService.signAccessToken({ _id: user.id }, '30m');
+        const refreshToken = JWTService.signRefreshToken({ _id: user.id }, '60m');
+
+        //update refresh token in the database
+        try {
+            await RefreshToken.updateOne({
+                _id: user._id,
+            },
+                { token: refreshToken },
+                { upsert: true });
+        } catch (error) {
+            return next(error);
+        }
+
+        res.cookie('accessToken', accessToken, {
+            maxAge: 1000 * 60 * 60 * 24,
+            httpOnly: true
+        });
+
+        res.cookie('refreshToken', refreshToken, {
+            maxAge: 1000 * 60 * 60 * 24,
+            httpOnly: true
+        });
+        const userDto = new userDTO(user)
+        return res.status(200).json({ user: userDto, auth: true });
 
     }
-};
-
+}
 module.exports = authController;
