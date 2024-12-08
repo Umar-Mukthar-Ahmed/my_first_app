@@ -1,7 +1,7 @@
 const Joi = require('joi');
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
-const userDTO = require('../dto/user');
+const UserDTO = require('../dto/user');
 const RefreshToken = require('../models/token');
 const JWTService = require('../services/JWTService');
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@.#$!%*?&])[A-Za-z\d@.#$!%*?&]{8,32}$/;
@@ -97,7 +97,7 @@ const authController = {
         });
 
         //6.update the response
-        const userDto = new userDTO(user);
+        const userDto = new UserDTO(user);
         return res.status(201).json({ user: userDto, auth: true });
     },
 
@@ -173,7 +173,83 @@ const authController = {
             maxAge: 1000 * 60 * 60 * 24,
             httpOnly: true
         });
-        const userDto = new userDTO(user)
+        const userDto = new UserDTO(user)
+        return res.status(200).json({ user: userDto, auth: true });
+
+    },
+
+    async logout(req, res, next) {
+        //delete refresh token
+        const { refreshToken } = req.cookies;
+        let user;
+        try {
+            await RefreshToken.deleteOne({ token: refreshToken });
+        } catch (error) {
+            return next(error);
+        }
+
+        //clear cookies
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
+
+        //send response
+        res.status(200).json({ user: null, auth: false })
+    },
+
+    async refresh(req, res, next) {
+
+        //get refresh token from cookies
+        const orignalRefreshToken = req.cookies.refreshToken;
+
+        //verify the refresh token 
+        let id;
+        try {
+            id = JWTService.verifyRefreshToken(orignalRefreshToken)._id
+        } catch (e) {
+            const error = {
+                status: 401,
+                message: 'Unauthorised'
+            }
+            return next(error);
+        }
+
+        //generate new token 
+        try {
+            const match = RefreshToken.findOne({ _id: id });
+
+            if (!match) {
+                const error = {
+                    status: 401,
+                    message: 'Unauthorised'
+                }
+                return next(error);
+            }
+        } catch (error) {
+            return next(error);
+        }
+
+        try {
+            accessToken = JWTService.signAccessToken({ _id: id }, '30m');
+            refreshToken = JWTService.signRefreshToken({ _id: id }, '60m');
+
+            //update db 
+            await RefreshToken.updateOne({ _id: id }, { token: refreshToken });
+
+            res.cookie('accessToken', accessToken, {
+                maxAge: 1000 * 60 * 60 * 24,
+                httpOnly: true
+            });
+            res.cookie('refreshToken', refreshToken, {
+                maxAge: 1000 * 60 * 60 * 24,
+                httpOnly: true
+            });
+        } catch (error) {
+            return next(error);
+        }
+
+        //response
+        const user = await User.findOne({ _id: id })
+        const userDto = new UserDTO(user);
         return res.status(200).json({ user: userDto, auth: true });
 
     }
