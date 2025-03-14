@@ -4,7 +4,7 @@ import Footer from "./components/Footer/Footer";
 import Home from "./pages/Home/Home";
 import styles from "./App.module.css";
 import Protected from "./components/Protected/Protected";
-import Error from "./pages/Error/Error";
+import ErrorPage from "./pages/ErrorPage/ErrorPage";
 import Login from "./pages/Login/Login";
 import { useSelector } from "react-redux";
 import Signup from "./pages/Signup/Signup";
@@ -18,7 +18,6 @@ import Loader from "./components/Loader/Loader";
 
 function App() {
   const isAuth = useSelector((state) => state.user.auth);
-
   const loading = useAutoLogin();
 
   return loading ? (
@@ -117,11 +116,23 @@ function App() {
               }
             />
 
+
+            <Route
+              path="error"
+              exact
+              element={
+                <div className={styles.main}>
+                  <ErrorPage />
+                </div>
+              }
+            />
+
+            {/* Fallback route for unmatched paths */}
             <Route
               path="*"
               element={
                 <div className={styles.main}>
-                  <Error />
+                  <ErrorPage />
                 </div>
               }
             />

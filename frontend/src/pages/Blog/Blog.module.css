@@ -1,37 +1,87 @@
-.blogsWrapper {
-  margin: 50px 0;
+/* Search Bar */
+.searchContainer {
   display: flex;
-  flex-direction: column;
-  gap: 50px;
-  flex-wrap: wrap;
-  align-items: center;
+  justify-content: center; 
+  width: 100%;
+  padding: 20px 0; 
+  margin-bottom: 20px; 
 }
 
+/* Search Input */
+.searchInput {
+  width: 300px;
+  padding: 10px;
+  border: 2px solid #16c784;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: 0.3s ease-in-out;
+}
+
+.searchInput::placeholder {
+  color: #aaa;
+}
+
+.searchInput:focus {
+  border-color: #17ae74;
+  box-shadow: 0px 0px 5px rgba(23, 174, 116, 0.5);
+}
+
+/* Error & No Blogs */
+.error,
+.noBlogs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; 
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: red;
+  text-align: center;
+}
+
+.noBlogs {
+  color: #555;
+}
+
+/* Blog Page Layout (Same as Home Page) */
+.blogsWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Blog Card */
 .blog {
   background-color: black;
   border: 1px solid #fff;
   border-radius: 10px;
-  width: 80%;
-  padding: 16px;
-  margin: 40px 20px;
   cursor: pointer;
+  width: 100%;
+  max-width: 300px; /* Match home page */
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 
 .blog img {
-  width: 300px;
-  height: 300px;
   border-radius: 10px;
+  width: 100%;
+  height: auto;
 }
 
 .blog h1 {
-  text-align: left;
-  margin: 15px 0;
+  text-align: center;
   background-color: transparent;
   color: #fff;
+  margin-top: 15px;
+  font-size: 20px;
+  font-weight: bold;
 }
 
 .blog:hover h1 {
@@ -41,4 +91,47 @@
 .blog p {
   margin-top: 20px;
   font-weight: bold;
+  text-align: center;
+  color: #ccc;
+}
+
+/* Responsive Design for Smaller Screens */
+@media (max-width: 768px) {
+  .searchContainer {
+    justify-content: center;
+    padding: 10px 20px;
+  }
+
+  .searchInput {
+    width: 250px;
+    font-size: 14px;
+  }
+
+  .blogsWrapper {
+    padding: 10px;
+  }
+
+  .blog {
+    width: 100%;
+    margin: 20px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .searchContainer {
+    padding: 10px;
+  }
+
+  .searchInput {
+    width: 200px;
+    font-size: 12px;
+  }
+
+  .blog {
+    width: 95%;
+  }
+
+  .blog img {
+    max-width: 250px;
+  }
 }

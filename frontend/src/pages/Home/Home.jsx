@@ -5,23 +5,37 @@ import Loader from "../../components/Loader/Loader";
 
 function Home() {
   const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     (async function newsApiCall() {
-      const response = await getNews();
-      setArticles(response);
+      try {
+        const response = await getNews();
+        if (response && response.length > 0) {
+          setArticles(response);
+        } else {
+          setError(true);
+        }
+      } catch (error) {
+        console.error("Error fetching news:", error);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
     })();
-
-    // cleanup function
-    setArticles([]);
   }, []);
 
   const handleCardClick = (url) => {
     window.open(url, "_blank");
   };
 
-  if (articles.length == 0) {
+  if (loading) {
     return <Loader text="homepage" />;
+  }
+
+  if (error) {
+    return <div className={styles.error}>Failed to load articles. Please try again later.</div>;
   }
 
   return (
@@ -34,7 +48,13 @@ function Home() {
             key={article.url}
             onClick={() => handleCardClick(article.url)}
           >
-            <img src={article.urlToImage} />
+            <img
+              src={article.urlToImage || "https://via.placeholder.com/300"}
+              alt={article.title}
+              onError={(e) => {
+                e.target.src = "https://via.placeholder.com/300";
+              }}
+            />
             <h3>{article.title}</h3>
           </div>
         ))}

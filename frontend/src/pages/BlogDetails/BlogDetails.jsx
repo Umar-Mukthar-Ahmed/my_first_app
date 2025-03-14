@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import styles from "./BlogDetails.module.css";
 import {
   getBlogById,
@@ -8,7 +8,6 @@ import {
   postComment,
   getCommentsById,
 } from "../../api/internal";
-import { useNavigate } from "react-router-dom";
 import Loader from "../../components/Loader/Loader";
 import CommentList from "../../components/CommentList/CommentList";
 
@@ -20,7 +19,6 @@ function BlogDetails() {
   const [reload, setReload] = useState(false);
 
   const navigate = useNavigate();
-
   const params = useParams();
   const blogId = params.id;
 
@@ -36,7 +34,6 @@ function BlogDetails() {
 
       const blogResponse = await getBlogById(blogId);
       if (blogResponse.status === 200) {
-        // set ownership
         setOwnsBlog(user_name === blogResponse.data.blog.authorUser_name);
         setBlog(blogResponse.data.blog);
       }
@@ -61,7 +58,6 @@ function BlogDetails() {
 
   const deleteBlogHandler = async () => {
     const response = await deleteBlog(blogId);
-
     if (response.status === 200) {
       navigate("/");
     }
@@ -84,16 +80,17 @@ function BlogDetails() {
           </p>
         </div>
         <div className={styles.photo}>
-          <img src={blog.photo} width={250} height={250} />
+          <img src={blog.photo} width={250} height={250} alt={blog.title} />
         </div>
         <p className={styles.content}>{blog.content}</p>
         {ownsBlog && (
           <div className={styles.controls}>
+            <button className={styles.editButton} onClick={() => navigate("/blogs")}>
+              ← Back to Blogs
+            </button>
             <button
               className={styles.editButton}
-              onClick={() => {
-                navigate(`/blog-update/${blog._id}`);
-              }}
+              onClick={() => navigate(`/blog-update/${blog._id}`)}
             >
               Edit
             </button>

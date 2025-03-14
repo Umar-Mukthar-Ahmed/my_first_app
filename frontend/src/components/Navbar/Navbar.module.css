@@ -1,10 +1,20 @@
 .navbar {
+  height: 60px;
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000; /* Ensure the navbar stays above other content */
+  }
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 15px;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
-  padding: 20px 0;
-  margin: 20px auto;
-  width: 80%;
+  height: 100%;
 }
 
 .logo {
@@ -13,19 +23,58 @@
   font-weight: 800;
 }
 
-.activeStyle {
-  color: #3861fb;
-  font-size: 22px;
-  font-weight: bold;
+.menuIcon {
+  display: none;
+  cursor: pointer;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 24px;
 }
 
-.inActiveStyle {
+.menuIcon .bar {
+  width: 100%;
+  height: 3px;
+  background-color: whitesmoke;
+  transition: all 0.3s ease;
+}
+
+/* Hamburger to X Animation */
+.menuIcon.open .bar:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.menuIcon.open .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.menuIcon.open .bar:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+.navElements {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.navElements a {
   text-decoration: none;
   font-size: 22px;
   font-weight: bold;
 }
 
-.logInButton {
+.activeStyle {
+  color: #3861fb;
+}
+
+.inActiveStyle {
+  color: white;
+}
+
+.logInButton,
+.signUpButton,
+.signOutButton {
   border: none;
   outline: none;
   border-radius: 10px;
@@ -33,7 +82,6 @@
   cursor: pointer;
   font-weight: bold;
   font-size: large;
-  text-decoration: none;
 }
 
 .logInButton:hover {
@@ -45,13 +93,6 @@
   margin-left: 10px;
   background-color: #3861fb;
   color: white;
-  border: none;
-  outline: none;
-  border-radius: 10px;
-  padding: 10px 15px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: large;
 }
 
 .signUpButton:hover {
@@ -62,13 +103,6 @@
   margin-left: 10px;
   background-color: #ea3943;
   color: white;
-  border: none;
-  outline: none;
-  border-radius: 10px;
-  padding: 10px 15px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: large;
 }
 
 .signOutButton:hover {
@@ -79,4 +113,43 @@
   height: 1px;
   margin-top: 5px;
   background: linear-gradient(to right, transparent, #9ba3c2, transparent);
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .navElements {
+    gap: 15px;
+  }
+}
+
+@media (max-width: 900px) {
+  .menuIcon {
+    display: flex;
+  }
+
+  .navElements {
+    position: absolute;
+    right: 0;
+    top: 60px;
+    background-color: black;
+    width: 0; 
+    height: calc(100vh - 60px);
+    transition: all 0.3s ease-in;
+    overflow: hidden;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 20px;
+    opacity: 0; 
+    visibility: hidden; 
+  }
+
+  .navElements.active {
+    width: 270px; 
+    opacity: 1; 
+    visibility: visible; 
+  }
+
+  .navElements a {
+    margin-top: 22px;
+  }
 }

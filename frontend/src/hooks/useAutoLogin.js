@@ -12,8 +12,8 @@ function useAutoLogin() {
     // IIFE
     (async function autoLoginApiCall() {
       try {
-        const response = await axios.get(
-          `${process.env.REACT_APP_INTERNAL_API_PATH}/refresh`,
+
+        const response = await axios.get("http://localhost:5000/refresh",
           {
             withCredentials: true,
           }

@@ -1,6 +1,13 @@
-.table {
-  width: 80%;
+.scrollContainer {
+  width: 100%;
+  overflow-x: auto; /* Enable horizontal scrolling */
   margin: 20px auto;
+  padding: 0 20px; /* Add padding to prevent content from touching the edges */
+}
+
+.table {
+  width: fit-content; /* Allow the table to expand beyond the container */
+  min-width: 100%; /* Ensure the table is at least as wide as the container */
   border-collapse: collapse;
 }
 
