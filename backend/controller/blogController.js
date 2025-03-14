@@ -2,53 +2,64 @@ const Joi = require('joi');
 const Blog = require('../models/blog');
 const mongodbIdPattern = /^[0-9a-fA-F]{24}$/;
 const { BACKEND_SERVER_PATH } = require('../config/index');
+const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const BlogDTO = require('../dto/blog');
 const BlogDetailsDTO = require('../dto/blog-details');
 const Comment = require('../models/comment');
-// const storagePath = 'storage';
+const storagePath = 'storage';
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+
 const blogController = {
 
     async create(req, res, next) {
         const createBlogSchema = Joi.object({
-
             title: Joi.string().required(),
             author: Joi.string().regex(mongodbIdPattern).required(),
             content: Joi.string().required(),
             photopath: Joi.string().required()
-
         });
 
         const { error } = createBlogSchema.validate(req.body);
-
         if (error) {
             return next(error);
         }
 
         const { title, author, content, photopath } = req.body;
 
-
-        //read as buffer
+        // Remove the base64 prefix and prepare the image buffer
         const buffer = Buffer.from(photopath.replace(/data:image\/(png|jpg|jpeg);base64,/, ''), 'base64');
 
-        //allot a name
-        const imagePath = `${Date.now()}-${author}.png`;
-        //save locally
-        try {
-            fs.writeFileSync(`storage/${imagePath}`, buffer);
-        }
-        catch (error) {
-            return next(error);
-        }
+        // Upload the image to Cloudinary
+        const cloudinaryResponse = await new Promise((resolve, reject) => {
 
-        //save the blog in database
+            const uploadStream = cloudinary.uploader.upload_stream(
+                { resource_type: 'image', public_id: `${Date.now()}-${author}` },
+                (error, result) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(result);
+                    }
+                }
+            );
+            uploadStream.end(buffer);
+        });
+
+        // Save the blog in the database with the URL of the image from Cloudinary
         let newBlog;
         try {
             newBlog = new Blog({
                 title,
                 author,
                 content,
-                photopath: `${BACKEND_SERVER_PATH}/storage/${imagePath}`
+                photopath: cloudinaryResponse.secure_url
             });
             await newBlog.save();
         } catch (error) {
@@ -57,27 +68,27 @@ const blogController = {
 
         const blogDto = new BlogDTO(newBlog);
         return res.status(201).json({ blog: blogDto });
-
-
     },
 
 
 
     async getAll(req, res, next) {
         try {
-            const blogs = await Blog.find({});
-            const blogsDTO = [];
+            const blogs = await Blog.find().sort({ createdAt: -1 }); // Newest first
 
-            for (let i = 0; i < blogs.length; i++) {
-                const dto = new BlogDTO(blogs[i]);
-                blogsDTO.push(dto);
+
+            if (blogs.length === 0) {
+                return res.status(200).json({ blogs: null }); // Return null instead of an empty array
             }
+
+            const blogsDTO = blogs.map(blog => new BlogDTO(blog));
 
             return res.status(200).json({ blogs: blogsDTO });
         } catch (error) {
             return next(error);
         }
-    },
+    }
+    ,
 
     async getById(req, res, next) {
         //validate id and send the response
@@ -108,65 +119,64 @@ const blogController = {
     ,
 
     async update(req, res, next) {
-        // Define a schema for validating the request body
         const updateBlogSchema = Joi.object({
-            title: Joi.string().required(), // Title is required
-            content: Joi.string().required(), // Content is required
-            author: Joi.string().regex(mongodbIdPattern).required(), // Author must match MongoDB ID format
-            blogId: Joi.string().regex(mongodbIdPattern).required(), // Blog ID must match MongoDB ID format
+            title: Joi.string().required(),
+            content: Joi.string().required(),
+            author: Joi.string().regex(mongodbIdPattern).required(),
+            blogId: Joi.string().regex(mongodbIdPattern).required(),
             photo: Joi.string() // Photo is optional
         });
 
-        // Validate the incoming request body
         const { error } = updateBlogSchema.validate(req.body);
         if (error) {
-            return next(error); // Pass validation errors to error-handling middleware
+            return next(error);
         }
 
-        // Destructure request body
         const { title, content, author, blogId, photo } = req.body;
 
-        // Find the blog by ID
         let blog;
         try {
             blog = await Blog.findOne({ _id: blogId });
         } catch (error) {
-            return next(error); // Pass database errors to error-handling middleware
+            return next(error);
         }
 
         // If a new photo is provided, update the photo
         if (photo) {
-            // Get the previous photo path
-            let previousPhoto = blog.photopath;
-            previousPhoto = previousPhoto.split('/').at(-1);
-
-            // Delete the previous photo from local storage
-            try {
-                fs.unlinkSync(`storage/${previousPhoto}`);
-            } catch (fsError) {
-                return next(fsError); // Handle file system errors
-            }
-
-            // Convert the base64 photo string to a buffer
+            // Remove the base64 prefix and prepare the image buffer
             const buffer = Buffer.from(photo.replace(/data:image\/(png|jpg|jpeg);base64,/, ''), 'base64');
 
-            // Generate a new image name
-            const imagePath = `${Date.now()}-${author}.png`;
-
-            // Save the new photo to local storage
+            // Upload the new image to Cloudinary
+            let cloudinaryResponse;
             try {
-                fs.writeFileSync(`storage/${imagePath}`, buffer);
+                cloudinaryResponse = await cloudinary.uploader.upload_stream(
+                    { resource_type: 'image', public_id: `${Date.now()}-${author}` },
+                    (error, result) => {
+                        if (error) {
+                            throw error;
+                        }
+                        return result;
+                    }
+                );
             } catch (error) {
-                return next(error); // Handle file write errors
+                return next(error);
             }
 
-            // Update the blog with the new photo path and other fields
+            // Delete the previous image from Cloudinary
+            const previousImagePublicId = blog.photopath.split('/').at(-1).split('.')[0];
+            try {
+                await cloudinary.uploader.destroy(previousImagePublicId);
+            } catch (error) {
+                return next(error);
+            }
+
+            // Update the blog with the new image URL
             await Blog.updateOne(
                 { _id: blogId },
                 {
                     title,
                     content,
-                    photoPath: `${BACKEND_SERVER_PATH}/storage/${imagePath}`
+                    photopath: cloudinaryResponse.secure_url // Updated Cloudinary URL
                 }
             );
         } else {
@@ -177,47 +187,52 @@ const blogController = {
                     { title, content }
                 );
             } catch (error) {
-                return next(error); // Handle database update errors
+                return next(error);
             }
         }
 
-        // Send a success response
         return res.status(200).json({ message: 'Blog updated!' });
-    }
-    ,
+    },
+
 
     async delete(req, res, next) {
-        // Validate the blog ID using Joi schema ,delete blog and delete respective comments
         const deleteBlogSchema = Joi.object({
             id: Joi.string().regex(mongodbIdPattern).required()
         });
 
-        // Validate the `req.params` against the schema
         const { error } = deleteBlogSchema.validate(req.params);
-
         if (error) {
             return next(error);
         }
 
         const { id } = req.params;
 
+        let blog;
+        try {
+            blog = await Blog.findOne({ _id: id });
+        } catch (error) {
+            return next(error);
+        }
+
+        // Extract the public ID from the Cloudinary URL to delete the image
+        const imagePublicId = blog.photopath.split('/').at(-1).split('.')[0];
 
         try {
-            // Delete the blog with the specified ID
+            // Delete the blog
             await Blog.deleteOne({ _id: id });
 
-            // Delete all comments associated with the blog
+            // Delete the image from Cloudinary
+            await cloudinary.uploader.destroy(imagePublicId);
+
+            // Delete all associated comments
             await Comment.deleteMany({ blog: id });
         } catch (error) {
             return next(error);
         }
 
-        // Send a success response
         return res.status(200).json({ message: 'Blog deleted' });
-
-
-
     }
+
 }
 
 module.exports = blogController;

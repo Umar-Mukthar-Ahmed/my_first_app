@@ -113,7 +113,11 @@ const authController = {
 
         //2.if validation error->retrun error
         if (error) {
-            return next(error);
+            const err = {
+                status: 401,
+                message: 'Invalid UserName or Password'
+            }
+            return next(err);
         }
 
         //3.match username and password
@@ -126,7 +130,7 @@ const authController = {
             if (!user) {
                 const error = {
                     status: 401,
-                    message: 'Invalid UserName'
+                    message: 'Invalid UserName or Password'
                 }
                 return next(error);
 
@@ -139,7 +143,7 @@ const authController = {
             if (!match) {
                 const error = {
                     status: 401,
-                    message: 'Invalid Password'
+                    message: 'Invalid UserName or Password'
                 }
                 return next(error);
 
