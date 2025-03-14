@@ -2,12 +2,35 @@
 
 ## Screenshots
 
-![Homepage](assets/images/home.png)  
-![CryptoCurrencies](assets/images/crypto.png)  
-![Sign Up](assets/images/register.png)  
-![Login](assets/images/login.png)  
-![Create Blog](assets/images/create.png)  
-![Blog Details](assets/images/details.png)
+### 1. Homepage
+
+This is the homepage of Blog Spot, where users can explore various cryptographic-related blogs.
+![Homepage](assets/images/home.png)
+
+### 2. Cryptographic Blogs
+
+This page displays a list of blogs specifically related to cryptography.
+![CryptoCurrencies](assets/images/crypto.png)
+
+### 3. User Registration
+
+New users can create an account using this signup page.
+![SignUp](assets/images/register.png)
+
+### 4. Login Page
+
+Users can log in securely using their credentials.
+![Login](assets/images/login.png)
+
+### 5. Create a Blog
+
+Authenticated users can create new blogs with a title, description, and images.
+![CreateBlog](assets/images/create.png)
+
+### 6. Blog Details
+
+This page shows the details of a single blog post.
+![CreateDetails](assets/images/details.png)
 
 ## Description
 
