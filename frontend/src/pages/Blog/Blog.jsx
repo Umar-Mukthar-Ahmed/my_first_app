@@ -73,7 +73,7 @@ function Blog() {
             >
               <h1>{blog.title}</h1>
               <img src={blog.photopath} alt={blog.title} />
-              <p>{blog.content}</p>
+              <p>{blog.content.length > 100 ? blog.content.substring(0, 100) + "..." : blog.content}</p>
             </div>
           ))
         ) : (
@@ -82,7 +82,6 @@ function Blog() {
       </div>
     </div>
   );
-
 }
 
 export default Blog;
